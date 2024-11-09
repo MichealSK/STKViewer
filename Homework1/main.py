@@ -51,9 +51,9 @@ def get_stock_data(symbol, start_date, end_date):
     }
     form_data = {"FromDate": start_date, "ToDate": end_date, "Code": symbol}
     response = requests.get(url, headers, data=form_data)
+    data = []
 
     if response.status_code == 200:
-        data = []
         soup = BeautifulSoup(response.text, "html.parser")
         table = soup.find("table", {"id": "resultsTable"})
         if table:
@@ -61,12 +61,15 @@ def get_stock_data(symbol, start_date, end_date):
                 entry_data = row.find_all("td")
 
                 entry = {"date": datetime.strptime(entry_data[0].text.strip(), "%m/%d/%Y").strftime("%Y-%m-%d")}
-                prices = ["last_price", "max", "min", "avg"]
-                numbers = ["change", "volume", "best_turnover", "total_turnover"]
-                for i, key in zip(range(1, 5), prices):
-                    entry[key] = entry_data[i].text.strip() if entry_data[i].text.strip() else "0.00"
-                for i, key in zip(range(5, 9), numbers):
-                    entry[key] = float(entry_data[i].text.replace(',', '')) if entry_data[i].text.strip() else 0.0
+                prices = ["last_price", "max", "min", "avg", "change", "volume", "best_turnover", "total_turnover"]
+                for i, key in zip(range(1, 9), prices):
+                    if entry_data[i].text.strip():
+                        num_text = entry_data[i].text.replace(',', 'X')
+                        num_text = num_text.replace('.', ',')
+                        num_text = num_text.replace('X', '.')
+                        entry[key] = num_text
+                    else:
+                        entry[key] = "0,00"
 
                 data.append(entry)
                 print(f"{symbol}: {entry}")

@@ -4,4 +4,6 @@
 
 It compiles all the stock data into a .db file that can be viewed using a standard database viewer.
 
-The completed project is expected to feature a more interactable UI which will include charts, graphs, and the ability to compare between two or more companies' stock values.
+If you want to re-scrape the website, please make sure both stocks_history.db and last_date.txt are deleted.
+
+The completed project is expected to feature a more intractable UI which will include charts, graphs, and the ability to compare between two or more companies' stock values.

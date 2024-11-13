@@ -3,8 +3,11 @@ import requests
 import sqlite3
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
+import threading
+from concurrent.futures import ThreadPoolExecutor, wait
 
 date_file_path = "last_date.txt"
+write_lock = threading.Lock()
 today = datetime.now().date()
 conn = sqlite3.connect('stocks_history.db')
 cursor = conn.cursor()
@@ -72,7 +75,7 @@ def get_stock_data(symbol, start_date, end_date):
                         entry[key] = "0,00"
 
                 data.append(entry)
-                print(f"{symbol}: {entry}")
+                # print(f"{symbol}: {entry}")
     else:
         print("Cannot reach site.")
 
@@ -80,14 +83,16 @@ def get_stock_data(symbol, start_date, end_date):
 
 
 def store_data(issuer_code, cleaned_data):
+    conn_store = sqlite3.connect('stocks_history.db')
+    cursor_store = conn_store.cursor()
     columns = ["date", "last_price", "max", "min", "avg", "change", "volume", "best_turnover", "total_turnover"]
 
     for record in cleaned_data:
         values = [issuer_code] + [record[column] for column in columns]
-        cursor.execute(''' 
-            INSERT OR IGNORE INTO stocks_history (Symbol, Date, Last_Trade_Price, Max, Min, Average_Price, Change, Volume, Best_Turnover, Total_Turnover)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', values)
-    conn.commit()
+        cursor_store.execute(''' 
+                INSERT OR IGNORE INTO stocks_history (Symbol, Date, Last_Trade_Price, Max, Min, Average_Price, Change, Volume, Best_Turnover, Total_Turnover)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', values)
+    conn_store.commit()
 
 
 def read_date_file():
@@ -113,20 +118,31 @@ def get_start_end_dates():
         return date_from, date_from + timedelta(days=364)
 
 
+def get_and_store_data(start_date, end_date, symbols):
+    for symbol in symbols:
+        raw_data = get_stock_data(symbol, start_date, end_date)
+        if raw_data:
+            store_data(symbol, raw_data)
+        print(f"CONTINUE: {start_date} for {symbol}")
+
+
 def main_pipeline():
     if not os.path.exists(date_file_path): update_last_date()
     start_date, end_date = get_start_end_dates()
     symbols = get_symbols()
+    futures = []
 
     start_time = datetime.now()
-    while start_date != today:
-        for symbol in symbols:
-            raw_data = get_stock_data(symbol, start_date, end_date)
-            if raw_data:
-                store_data(symbol, raw_data)
-        update_last_date()
-        start_date, end_date = get_start_end_dates()
+    with ThreadPoolExecutor() as executor:
+        while start_date < today:
+            with write_lock:
+                print(f"Starting thread for {start_date}")
+                futures.append(executor.submit(get_and_store_data, start_date, end_date, symbols))
+                update_last_date()
+                start_date, end_date = get_start_end_dates()
+                print(f"Current Start Date: {start_date}")
 
+    wait(futures)
     print(f"Time needed to create/adjust database: {(datetime.now() - start_time).total_seconds()} seconds")
 
 

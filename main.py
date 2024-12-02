@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
+from flask import Flask, jsonify, request, send_from_directory
 
 date_file_path = "last_date.txt"
 write_lock = threading.Lock()
@@ -148,3 +149,35 @@ def main_pipeline():
 
 main_pipeline()
 conn.close()
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return send_from_directory('static', 'index.html')
+
+@app.route('/symbols', methods=['GET'])
+def get_symbols_api():
+    symbols = get_symbols()
+    return jsonify(symbols)
+
+
+@app.route('/company-data', methods=['GET'])
+def get_company_data():
+    symbol = request.args.get('symbol')
+    conn = sqlite3.connect('stocks_history.db')
+    cursor = conn.cursor()
+    query = "SELECT * FROM stocks_history WHERE Symbol = ?"
+    cursor.execute(query, (symbol,))
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Format data
+    columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover",
+               "Total_Turnover"]
+    data = [dict(zip(columns, row)) for row in rows]
+    return jsonify(data)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

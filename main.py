@@ -161,18 +161,29 @@ main_pipeline()
 conn.close()
 
 
+def preprocess_data(data):
+    df = pd.DataFrame(data)
+    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+    for col in ['Last_Trade_Price', 'Max', 'Min', 'Average_Price', 'Change']: df[col] = df[col].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+    df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+    df.sort_values(by='Date', inplace=True)
+    df.reset_index(drop=True, inplace=True)
+
+    return df
+
+
 # TECHNICAL ANALYSIS FUNCTIONS
 def calculate_indicators(df):
-    df['RSI'] = ta.momentum.RSIIndicator(close=df['last_price']).rsi()
-    df['Stochastic'] = ta.momentum.StochasticOscillator(high=df['max'], low=df['min'], close=df['last_price']).stoch()
-    df['MACD'] = ta.trend.MACD(close=df['last_price']).macd()
-    df['Momentum'] = df['last_price'].diff()
-    df['CCI'] = ta.trend.CCIIndicator(high=df['max'], low=df['min'], close=df['last_price']).cci()
-    df['SMA'] = ta.trend.SMAIndicator(close=df['last_price'], window=14).sma_indicator()
-    df['EMA'] = ta.trend.EMAIndicator(close=df['last_price'], window=14).ema_indicator()
-    df['WMA'] = df['last_price'].rolling(window=14).apply(lambda x: (x * range(1, len(x)+1)).sum() / sum(range(1, len(x)+1)))
+    df['RSI'] = ta.momentum.RSIIndicator(close=df['Last_Trade_Price']).rsi()
+    df['Stochastic'] = ta.momentum.StochasticOscillator(high=df['Max'], low=df['Min'], close=df['Last_Trade_Price']).stoch()
+    df['MACD'] = ta.trend.MACD(close=df['Last_Trade_Price']).macd()
+    df['Momentum'] = df['Last_Trade_Price'].diff()
+    df['CCI'] = ta.trend.CCIIndicator(high=df['Max'], low=df['Min'], close=df['Last_Trade_Price']).cci()
+    df['SMA'] = ta.trend.SMAIndicator(close=df['Last_Trade_Price'], window=14).sma_indicator()
+    df['EMA'] = ta.trend.EMAIndicator(close=df['Last_Trade_Price'], window=14).ema_indicator()
+    df['WMA'] = df['Last_Trade_Price'].rolling(window=14).apply(lambda x: (x * range(1, len(x)+1)).sum() / sum(range(1, len(x)+1)))
     df['MAE_upper'], df['MAE_lower'] = df['SMA'] * 1.02, df['SMA'] * 0.98
-    df['HMA'] = ta.trend.WMAIndicator(close=df['last_price'], window=14).wma()
+    df['HMA'] = ta.trend.WMAIndicator(close=df['Last_Trade_Price'], window=14).wma()
 
     return df
 
@@ -225,6 +236,8 @@ def get_company_data():
     columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover",
                "Total_Turnover"]
     data = [dict(zip(columns, row)) for row in rows]
+    df = preprocess_data(data)
+    print(aggregate_signals(generate_signals(calculate_indicators(df))))
     return jsonify(data)
 
 

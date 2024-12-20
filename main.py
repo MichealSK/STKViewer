@@ -1,11 +1,20 @@
 import os
 import requests
 import sqlite3
+import ta
+from ta import momentum, trend
+import pandas as pd
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
 from flask import Flask, jsonify, request, send_from_directory
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.layers import LSTM, Dense
+# import matplotlib.pyplot as plt
+
 
 date_file_path = "last_date.txt"
 write_lock = threading.Lock()
@@ -147,14 +156,54 @@ def main_pipeline():
     print(f"Time needed to create/adjust database: {(datetime.now() - start_time).total_seconds()} seconds")
 
 
+# RETRIEVE DATA
 main_pipeline()
 conn.close()
 
+
+# TECHNICAL ANALYSIS FUNCTIONS
+def calculate_indicators(df):
+    df['RSI'] = ta.momentum.RSIIndicator(close=df['last_price']).rsi()
+    df['Stochastic'] = ta.momentum.StochasticOscillator(high=df['max'], low=df['min'], close=df['last_price']).stoch()
+    df['MACD'] = ta.trend.MACD(close=df['last_price']).macd()
+    df['Momentum'] = df['last_price'].diff()
+    df['CCI'] = ta.trend.CCIIndicator(high=df['max'], low=df['min'], close=df['last_price']).cci()
+    df['SMA'] = ta.trend.SMAIndicator(close=df['last_price'], window=14).sma_indicator()
+    df['EMA'] = ta.trend.EMAIndicator(close=df['last_price'], window=14).ema_indicator()
+    df['WMA'] = df['last_price'].rolling(window=14).apply(lambda x: (x * range(1, len(x)+1)).sum() / sum(range(1, len(x)+1)))
+    df['MAE_upper'], df['MAE_lower'] = df['SMA'] * 1.02, df['SMA'] * 0.98
+    df['HMA'] = ta.trend.WMAIndicator(close=df['last_price'], window=14).wma()
+
+    return df
+
+
+def generate_signals(df):
+    df['RSI_signal'] = df['RSI'].apply(lambda x: 'Buy' if x < 30 else 'Sell' if x > 70 else 'Hold')
+    df['MA_signal'] = df.apply(lambda row: 'Buy' if row['SMA'] < row['EMA'] else 'Sell' if row['SMA'] > row['EMA'] else 'Hold', axis=1)
+    # Dovrshi
+    return df
+
+
+def aggregate_signals(df):
+    signals = ['RSI_signal', 'MA_signal']
+    df['Overall_signal'] = df[signals].mode(axis=1)[0]
+    return df
+
+
+# FUNDAMENTAL ANALYSIS
+
+
+# PRICE PREDICTION
+
+
+# FRONTEND
 app = Flask(__name__)
+
 
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
+
 
 @app.route('/symbols', methods=['GET'])
 def get_symbols_api():

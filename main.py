@@ -2,6 +2,7 @@ import os
 import requests
 import sqlite3
 import ta
+import numpy as np
 from ta import momentum, trend
 import pandas as pd
 from datetime import datetime, timedelta
@@ -11,8 +12,10 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from flask import Flask, jsonify, request, send_from_directory
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import LSTM, Dense
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from keras.src.models import Sequential
+from keras.src.layers import LSTM, Dense
 # import matplotlib.pyplot as plt
 
 
@@ -164,7 +167,8 @@ conn.close()
 def preprocess_data(data):
     df = pd.DataFrame(data)
     df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
-    for col in ['Last_Trade_Price', 'Max', 'Min', 'Average_Price', 'Change']: df[col] = df[col].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
+    for col in ['Last_Trade_Price', 'Max', 'Min', 'Average_Price', 'Change', 'Best_Turnover', 'Total_Turnover']:
+        df[col] = df[col].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
     df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
     df.sort_values(by='Date', inplace=True)
     df.reset_index(drop=True, inplace=True)
@@ -205,6 +209,44 @@ def aggregate_signals(df):
 
 
 # PRICE PREDICTION
+def create_sequences(data, target_col, sequence_length=10):
+    sequences = []
+    targets = []
+
+    if isinstance(data, np.ndarray):
+        raise TypeError("Expected a Pandas DataFrame, but got a NumPy array.")
+
+    for i in range(len(data) - sequence_length):
+        seq = data.iloc[i:i + sequence_length].drop(columns=[target_col]).values
+        target = data.iloc[i + sequence_length][target_col]
+        sequences.append(seq)
+        targets.append(target)
+
+    return np.array(sequences), np.array(targets)
+
+
+def predict_prices(df):
+    encoder = LabelEncoder()
+    df = df.fillna(0)
+    df = df.replace([np.inf, -np.inf], 0)
+    df = df.drop(columns=['Symbol', 'Date'])
+    df['RSI_signal'] = encoder.fit_transform(df['RSI_signal'])
+    df['MA_signal'] = encoder.fit_transform(df['MA_signal'])
+    df['Overall_signal'] = encoder.fit_transform(df['Overall_signal'])
+    scaler = MinMaxScaler()
+    df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
+
+    x, y = create_sequences(df, 'Last_Trade_Price', 10)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42, shuffle=False)
+
+    model = Sequential([
+        LSTM(50, activation='relu', input_shape=(x_train.shape[1], x_train.shape[2])),
+        Dense(1)
+    ])
+    model.compile(optimizer='adam', loss='mse')
+    model.fit(x_train, y_train, epochs=10, batch_size=32, verbose=1)
+    loss = model.evaluate(x_test, y_test, verbose=0)
+    print(f"Model Loss (MSE): {loss:.2f}")
 
 
 # FRONTEND
@@ -236,8 +278,9 @@ def get_company_data():
     columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover",
                "Total_Turnover"]
     data = [dict(zip(columns, row)) for row in rows]
-    df = preprocess_data(data)
-    print(aggregate_signals(generate_signals(calculate_indicators(df))))
+    df = aggregate_signals(generate_signals(calculate_indicators(preprocess_data(data))))
+    print(df)
+    predict_prices(df)
     return jsonify(data)
 
 

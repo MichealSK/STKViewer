@@ -305,7 +305,7 @@ def predict_prices(df):
     df['MA_signal'] = encoder.fit_transform(df['MA_signal'])
     df['Overall_signal'] = encoder.fit_transform(df['Overall_signal'])
     # scaler = MinMaxScaler()
-    #df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
+    # df = pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
 
     x, y = create_sequences(df, 'Last_Trade_Price', 10)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42, shuffle=False)
@@ -317,7 +317,7 @@ def predict_prices(df):
     model.compile(optimizer='adam', loss='mse')
     model.fit(x_train, y_train, epochs=10, batch_size=32, verbose=1)
     loss = model.evaluate(x_test, y_test, verbose=0)
-    print(f"Model Loss (MSE): {loss:.2f}")
+    # print(f"Model Loss (MSE): {loss:.2f}")
 
     def predict_future(steps):
         future_predictions = []
@@ -331,12 +331,12 @@ def predict_prices(df):
             last_sequence = np.append(last_sequence[1:], next_prediction_array, axis=0)
         return future_predictions
 
-    print(df['Last_Trade_Price'])
+    # print(df['Last_Trade_Price'])
 
     predictions_1_day = predict_future(1)
     last_value = (df['Last_Trade_Price'].tail(1).values[0])
-    print(last_value)
-    print(float(predictions_1_day[-1]))
+    # print(last_value)
+    # print(float(predictions_1_day[-1]))
     adjusted_value = round((float(predictions_1_day[-1]) + last_value)/2)
 
     if float(predictions_1_day[-1]) < 0 or adjusted_value > last_value * 2 or adjusted_value < last_value / 2:

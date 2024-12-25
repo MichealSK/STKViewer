@@ -8,8 +8,11 @@ import pandas as pd
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import threading
+import tensorflow
 from concurrent.futures import ThreadPoolExecutor, wait
 from flask import Flask, jsonify, request, send_from_directory
+from nltk.sentiment import SentimentIntensityAnalyzer
+import nltk
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
@@ -18,7 +21,7 @@ from keras.src.models import Sequential
 from keras.src.layers import LSTM, Dense
 # import matplotlib.pyplot as plt
 
-
+nltk.download("vader_lexicon")
 date_file_path = "last_date.txt"
 write_lock = threading.Lock()
 today = datetime.now().date()
@@ -206,6 +209,74 @@ def aggregate_signals(df):
 
 
 # FUNDAMENTAL ANALYSIS
+def get_news_sentiment(company_name):
+    urls = [
+        "https://www.mse.mk/mk/news/latest/1",
+        "https://www.mse.mk/mk/news/latest/2"
+    ]
+
+    news_links = []
+    for url in urls:
+        response = requests.get(url)
+        if response.status_code != 200:
+            print(f"Failed to fetch the page: {url}")
+            continue
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        panel_body = soup.find("div", class_="panel-body")
+        if panel_body:
+            links = panel_body.find_all("a", href=True)
+            news_links.extend([link["href"] for link in links])
+
+    if not news_links:
+        print("No news links found.")
+        return
+
+    sia = SentimentIntensityAnalyzer()
+    company_sentiment = {"positive": 0, "negative": 0, "neutral": 0}
+    company_news_found = False
+
+    for link in news_links:
+        if not link.startswith("http"):
+            link = f"https://www.mse.mk{link}"
+
+        response = requests.get(link)
+        if response.status_code != 200:
+            print(f"Failed to fetch news article: {link}")
+            continue
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        news_text = soup.get_text()
+
+        if company_name.lower() in news_text.lower():
+            company_news_found = True
+            sentiment_score = sia.polarity_scores(news_text)
+            if sentiment_score["compound"] > 0.05:
+                company_sentiment["positive"] += 1
+            elif sentiment_score["compound"] < -0.05:
+                company_sentiment["negative"] += 1
+            else:
+                company_sentiment["neutral"] += 1
+
+    if not company_news_found:
+        print("No information.")
+        return
+
+    positive = company_sentiment["positive"]
+    negative = company_sentiment["negative"]
+    neutral = company_sentiment["neutral"]
+
+    print(f"Sentiment Analysis for {company_name}:")
+    print(f"Positive news: {positive}")
+    print(f"Negative news: {negative}")
+    print(f"Neutral news: {neutral}")
+
+    if positive > negative:
+        print("Recommendation: Buy stocks.")
+    elif negative > positive:
+        print("Recommendation: Sell stocks.")
+    else:
+        print("Recommendation: Hold stocks.")
 
 
 # PRICE PREDICTION
@@ -280,6 +351,7 @@ def get_company_data():
     data = [dict(zip(columns, row)) for row in rows]
     df = aggregate_signals(generate_signals(calculate_indicators(preprocess_data(data))))
     print(df)
+    print(get_news_sentiment(symbol))
     predict_prices(df)
     return jsonify(data)
 

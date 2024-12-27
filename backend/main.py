@@ -372,12 +372,12 @@ def fetch_stock_data():
         conn.close()
         columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover", "Total_Turnover"]
         data = [dict(zip(columns, row)) for row in rows]
-        df = generate_signals(calculate_indicators(preprocess_data(data)))
+        df = aggregate_signals(generate_signals(calculate_indicators(preprocess_data(data))))
         sentiment = get_news_sentiment(symbol)
         prediction = predict_prices(df)
-        #df['Sentiment'] = sentiment
-        #df['Prediction'] = prediction
-        return jsonify(df.to_dict(orient='records')), 200
+        df = df.fillna(0)
+        df = df.replace([np.inf, -np.inf], 0)
+        return jsonify({"dataframe": df.to_dict(orient='records'), "sentiment": sentiment, "prediction": prediction}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

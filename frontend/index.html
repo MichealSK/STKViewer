@@ -41,6 +41,7 @@
   <p id="latest-date">Date: </p>
   <p id="latest-price">Last Trade Price: </p>
   <p id="latest-change">Change: </p>
+  <p id="latest-signal">Signal: </p>
   <p id="latest-sentiment">Recommendation: </p>
   <p id="latest-prediction">Prediction: </p>
 </div>
@@ -81,12 +82,13 @@
       const data = await response.json();
 
       if (response.ok) {
-        document.getElementById("latest-symbol").textContent = `Symbol: ${data.Symbol}`;
-        document.getElementById("latest-date").textContent = `Date: ${data.Date}`;
-        document.getElementById("latest-price").textContent = `Last Trade Price: ${data.Last_Trade_Price}`;
-        document.getElementById("latest-change").textContent = `Change: ${data.Change}`;
-        //document.getElementById("latest-sentiment").textContent = `Recommendation: ${data.Sentiment}`;
-        //document.getElementById("latest-prediction").textContent = `Prediction: ${data.Prediction}`;
+        document.getElementById("latest-symbol").textContent = `Symbol: ${data.dataframe[0].Symbol}`;
+        document.getElementById("latest-date").textContent = `Date: ${data.dataframe[0].Date}`;
+        document.getElementById("latest-price").textContent = `Last Trade Price: ${data.dataframe[0].Last_Trade_Price}`;
+        document.getElementById("latest-change").textContent = `Change: ${data.dataframe[0].Change}`;
+        document.getElementById("latest-signal").textContent = `Signal: ${data.dataframe[0].Overall_signal}`;
+        document.getElementById("latest-sentiment").textContent = `Recommendation: ${data.sentiment}`;
+        document.getElementById("latest-prediction").textContent = `Prediction: ${data.prediction}`;
       } else {
         alert(data.error || "No data available for the selected company.");
       }

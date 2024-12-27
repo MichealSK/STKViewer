@@ -92,7 +92,7 @@ def get_stock_data(symbol, start_date, end_date):
                         entry[key] = "0,00"
 
                 data.append(entry)
-                # print(f"{symbol}: {entry}")
+                print(f"{symbol}: {entry}")
     else:
         print("Cannot reach site.")
 
@@ -176,7 +176,6 @@ def preprocess_data(data):
     df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
     df.sort_values(by='Date', inplace=True)
     df.reset_index(drop=True, inplace=True)
-
     return df
 
 
@@ -274,10 +273,13 @@ def get_news_sentiment(company_name):
 
     if positive > negative:
         print("Recommendation: Buy stocks.")
+        return "Buy"
     elif negative > positive:
         print("Recommendation: Sell stocks.")
+        return "Sell"
     else:
         print("Recommendation: Hold stocks.")
+        return "Hold"
 
 
 # PRICE PREDICTION
@@ -350,36 +352,34 @@ def predict_prices(df):
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/')
-def index():
-    return send_from_directory('static', 'index.html')
-
-
 @app.route('/symbols', methods=['GET'])
-def get_symbols_api():
+def fetch_symbols():
     symbols = get_symbols()
-    return jsonify(symbols)
+    return jsonify(symbols), 200
 
-
-@app.route('/company-data', methods=['GET'])
-def get_company_data():
+@app.route('/stocks', methods=['GET'])
+def fetch_stock_data():
     symbol = request.args.get('symbol')
-    conn = sqlite3.connect('stocks_history.db')
-    cursor = conn.cursor()
-    query = "SELECT * FROM stocks_history WHERE Symbol = ?"
-    cursor.execute(query, (symbol,))
-    rows = cursor.fetchall()
-    conn.close()
+    if not symbol:
+        return jsonify({"error": "Symbol parameter is required"}), 400
 
-    # Format data
-    columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover",
-               "Total_Turnover"]
-    data = [dict(zip(columns, row)) for row in rows]
-    df = aggregate_signals(generate_signals(calculate_indicators(preprocess_data(data))))
-    print(df)
-    print(get_news_sentiment(symbol))
-    print(predict_prices(df))
-    return jsonify(data)
+    try:
+        conn = sqlite3.connect('stocks_history.db')
+        cursor = conn.cursor()
+        query = "SELECT * FROM stocks_history WHERE Symbol = ?"
+        cursor.execute(query, (symbol,))
+        rows = cursor.fetchall()
+        conn.close()
+        columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover", "Total_Turnover"]
+        data = [dict(zip(columns, row)) for row in rows]
+        df = generate_signals(calculate_indicators(preprocess_data(data)))
+        sentiment = get_news_sentiment(symbol)
+        prediction = predict_prices(df)
+        #df['Sentiment'] = sentiment
+        #df['Prediction'] = prediction
+        return jsonify(df.to_dict(orient='records')), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':

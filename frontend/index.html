@@ -13,58 +13,6 @@
 <script type="module" src="/src/main.jsx"></script>
 <script>
   const apiBase = "http://127.0.0.1:5000";
-
-
-  async function loadSymbols() {
-    try {
-      const response = await fetch(`${apiBase}/symbols`);
-      const symbols = await response.json();
-
-      const dropdown = document.getElementById("company-symbol");
-      dropdown.innerHTML = "";
-
-      symbols.forEach(symbol => {
-        const option = document.createElement("option");
-        option.value = symbol;
-        option.textContent = symbol;
-        dropdown.appendChild(option);
-      });
-    } catch (error) {
-      console.error("Error fetching symbols:", error);
-    }
-  }
-
-  async function fetchCompanyData() {
-    const symbol = document.getElementById("company-symbol").value;
-
-    if (!symbol) {
-      alert("Please select a company.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${apiBase}/stocks?symbol=${symbol}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        document.getElementById("latest-symbol").textContent = `Symbol: ${data.dataframe[0].Symbol}`;
-        document.getElementById("latest-date").textContent = `Date: ${data.dataframe[0].Date}`;
-        document.getElementById("latest-price").textContent = `Last Trade Price: ${data.dataframe[0].Last_Trade_Price}`;
-        document.getElementById("latest-change").textContent = `Change: ${data.dataframe[0].Change}`;
-        document.getElementById("latest-signal").textContent = `Signal: ${data.dataframe[0].Overall_signal}`;
-        document.getElementById("latest-sentiment").textContent = `Recommendation: ${data.sentiment}`;
-        document.getElementById("latest-prediction").textContent = `Prediction: ${data.prediction}`;
-      } else {
-        alert(data.error || "No data available for the selected company.");
-      }
-    } catch (error) {
-      console.error("Error fetching company data:", error);
-      alert("An error occurred while fetching company data.");
-    }
-  }
-
-
-
   window.onload = loadSymbols;
 </script>
 </body>

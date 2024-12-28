@@ -2,69 +2,61 @@ import { useState, useEffect } from "react";
 import {
     AppBar, Toolbar, Typography, Box, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, CssBaseline,
 } from "@mui/material";
-//import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import axios from "axios";
 import { styled } from "@mui/system";
 import { FaGithub } from "react-icons/fa";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-//import {CategoryScale, Chart as ChartJS, PointElement} from "chart.js";
 //import {LinearScale, Title} from "@mui/icons-material";
 //import {LineElement} from "@mui/x-charts";
-
-
-
 //ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const App = () => {
     const [symbols, setSymbols] = useState([]);
     const [selectedSymbol, setSelectedSymbol] = useState("");
-    const [stockData, setStockData] = useState(null);
-    const [chartData, setChartData] = useState(null);
+    const [companyData, setCompanyData] = useState(null);
+    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
-
     const theme = createTheme({
         palette: {
-            mode: 'dark', // Set the default mode to dark
+            mode: 'dark',
         },
     });
 
-    // Fetch symbols on component mount
     useEffect(() => {
-        axios.get("http://localhost:5000/symbols")
-            .then(response => setSymbols(response.data))
-            .catch(error => console.error("Error fetching symbols:", error));
+        const loadSymbols = async () => {
+            try {
+                const response = await fetch(`${apiBase}/symbols`);
+                const data = await response.json();
+                setSymbols(data);
+            } catch (error) {
+                console.error("Error fetching symbols:", error);
+                setError("Failed to load symbols.");
+            }
+        };
+
+        loadSymbols();
     }, []);
 
-    const handleFetchData = () => {
-        if (!selectedSymbol) return;
-
+    const fetchCompanyData = async () => {
+        if (!selectedSymbol) {
+            alert("Please select a company.");
+            return;
+        }
         setLoading(true);
-        // TODO - remove chart stuff, focus only on filling the paragraphs
-        axios.get(`http://localhost:5000/stocks?symbol=${selectedSymbol}&start_date=2023-01-01&end_date=2023-12-31`)
-            .then(response => {
-                const fetchedData = response.data;
+        try {
+            const response = await fetch(`${apiBase}/stocks?symbol=${selectedSymbol}`);
+            const data = await response.json();
 
-                // Extract dates and prices for the chart
-                const dates = fetchedData.map(item => item.Date); // Ensure field matches backend
-                const prices = fetchedData.map(item => parseFloat(item.Last_Trade_Price)); // Convert string to number
-
-                // Update state for chart
-                setStockData(fetchedData);
-                setChartData({
-                    labels: dates,
-                    datasets: [
-                        {
-                            label: `${selectedSymbol} Stock Prices`,
-                            data: prices,
-                            borderColor: "rgba(75,192,192,1)",
-                            fill: false,
-                            tension: 0.1, // Smooth line
-                        },
-                    ],
-                });
-            })
-            .catch(error => console.error("Error fetching stock data:", error))
-            .finally(() => setLoading(false));
+            if (response.ok) {
+                setCompanyData(data);
+            } else {
+                alert(data.error || "No data available for the selected company.");
+            }
+        } catch (error) {
+            console.error("Error fetching company data:", error);
+            alert("An error occurred while fetching company data.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const StyledFooter = styled(Box)(() => ({
@@ -104,18 +96,12 @@ const App = () => {
         }
     }));
 
-    const ChartContainer = styled(Box)(() => ({
-        width: "100%",
-        height: "400px",
-        padding: "20px",
-        marginBottom: "60px"
-    }));
 
 
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
-            <AppBar sx={{backgroundColor: 'rgba(64, 64, 64, 1)', boxShadow: 'none' , position: 'fixed'}}>
+            <AppBar sx={{backgroundColor: 'rgba(40, 40, 40, 1)', color:'inherit', boxShadow: 'none', position: 'fixed'}}>
                 <Toolbar>
                     <Typography variant="h6" noWrap>
                         STKViewer
@@ -123,7 +109,10 @@ const App = () => {
                 </Toolbar>
             </AppBar>
 
-            {/* Main Content */}
+            <h1>Welcome to STKViewer</h1>
+            <Typography variant="p">To get started, select a company from the dropdown menu to view their latest stock
+                performance and recommendations.</Typography>
+
             <Box sx={{my: 4}}>
                 <FormControl fullWidth>
                     <InputLabel>Select Company</InputLabel>
@@ -141,27 +130,27 @@ const App = () => {
                     variant="contained"
                     color="inherit"
                     sx={{mt: 2}}
-                    onClick={handleFetchData}
+                    onClick={fetchCompanyData}
                     disabled={loading}
                 >
                     {loading ? <CircularProgress size={24}/> : "Fetch Data"}
                 </Button>
             </Box>
-
-            <Box sx={{my: 4}}>
-                <h2>Latest Information:</h2>
-                <p id="latest-symbol">Symbol: </p>
-                <p id="latest-date">Date: </p>
-                <p id="latest-price">Last Trade Price: </p>
-                <p id="latest-change">Change: </p>
-                <p id="latest-signal">Signal: </p>
-                <p id="latest-sentiment">Recommendation: </p>
-                <p id="latest-prediction">Prediction: </p>
-                <p></p>
-                <p></p>
-                <p></p>
-                <p></p>
-            </Box>
+            {companyData && (
+                <div>
+                    <h2>Latest information for: {selectedSymbol}</h2>
+                    <p>
+                    <span className="data" id="latest-symbol">Symbol: {companyData.dataframe[0].Symbol}</span>
+                    <span className="data" id="latest-date">Date: {companyData.dataframe[0].Date}</span>
+                    <span className="data" id="latest-price">Last Trade Price: {companyData.dataframe[0].Last_Trade_Price}</span>
+                    <span className="data" id="latest-change">Change: {companyData.dataframe[0].Change}</span>
+                    <span className="data" id="latest-signal">Signal: {companyData.dataframe[0].Overall_signal}</span>
+                    <span className="data" id="latest-sentiment">Recommendation: {companyData.sentiment}</span>
+                    <span className="data" id="latest-prediction">{companyData.prediction}</span>
+                    </p>
+                    {error && <p style={{color: "red"}}>{error}</p>}
+                </div>
+            )}
 
             {/*<ChartContainer>
                 <Typography variant="h4" gutterBottom>

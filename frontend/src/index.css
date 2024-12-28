@@ -23,9 +23,10 @@ a:hover {
 }
 
 body {
-  margin: 64px 0 0 !important;
+  margin: 64px 0 64px 0 !important;
+  padding-left: 2rem;
   display: flex;
-  place-items: center;
+  /*place-items: center;*/
   min-width: 320px;
   min-height: 100vh;
   font-family: Arial, sans-serif;
@@ -37,6 +38,10 @@ p {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
+}
+
+.data {
+  display: flex;
 }
 
 button {

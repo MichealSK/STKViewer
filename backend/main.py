@@ -366,7 +366,7 @@ def fetch_stock_data():
     try:
         conn = sqlite3.connect('stocks_history.db')
         cursor = conn.cursor()
-        query = "SELECT * FROM stocks_history WHERE Symbol = ?"
+        query = "SELECT * FROM stocks_history WHERE Symbol = ? ORDER BY Date DESC"
         cursor.execute(query, (symbol,))
         rows = cursor.fetchall()
         conn.close()

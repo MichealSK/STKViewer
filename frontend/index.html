@@ -2,50 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/chart.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Data Viewer</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .dropdown, .button {
-      margin: 10px 0;
-    }
-    p {
-      background-color: #f9f9f9;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-  </style>
+  <title>STKViewer</title>
 </head>
 <body>
-<div class="container">
-  <h1>Company Stock Data</h1>
+<div id="root">
 
-  <div class="dropdown">
-    <label for="company-symbol">Select a company:</label>
-    <select id="company-symbol">
-    </select>
-  </div>
-
-  <button class="button" onclick="fetchCompanyData()">Fetch Latest Data</button>
-
-  <h2>Latest Information:</h2>
-  <p id="latest-symbol">Symbol: </p>
-  <p id="latest-date">Date: </p>
-  <p id="latest-price">Last Trade Price: </p>
-  <p id="latest-change">Change: </p>
-  <p id="latest-signal">Signal: </p>
-  <p id="latest-sentiment">Recommendation: </p>
-  <p id="latest-prediction">Prediction: </p>
 </div>
-
+<script type="module" src="/src/main.jsx"></script>
 <script>
   const apiBase = "http://127.0.0.1:5000";
 

@@ -1,27 +1,19 @@
 import { useState, useEffect } from "react";
 import {
-    AppBar,
-    Toolbar,
-    Typography,
-    Box,
-    Button,
-    Select,
-    MenuItem,
-    FormControl,
-    InputLabel,
-    CircularProgress,
+    AppBar, Toolbar, Typography, Box, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, CssBaseline,
 } from "@mui/material";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+//import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import axios from "axios";
 import { styled } from "@mui/system";
 import { FaGithub } from "react-icons/fa";
-import {CategoryScale, Chart as ChartJS, PointElement} from "chart.js";
-import {LinearScale, Title} from "@mui/icons-material";
-import {LineElement} from "@mui/x-charts";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+//import {CategoryScale, Chart as ChartJS, PointElement} from "chart.js";
+//import {LinearScale, Title} from "@mui/icons-material";
+//import {LineElement} from "@mui/x-charts";
 
 
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+//ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const App = () => {
     const [symbols, setSymbols] = useState([]);
@@ -29,6 +21,12 @@ const App = () => {
     const [stockData, setStockData] = useState(null);
     const [chartData, setChartData] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const theme = createTheme({
+        palette: {
+            mode: 'dark', // Set the default mode to dark
+        },
+    });
 
     // Fetch symbols on component mount
     useEffect(() => {
@@ -41,6 +39,7 @@ const App = () => {
         if (!selectedSymbol) return;
 
         setLoading(true);
+        // TODO - remove chart stuff, focus only on filling the paragraphs
         axios.get(`http://localhost:5000/stocks?symbol=${selectedSymbol}&start_date=2023-01-01&end_date=2023-12-31`)
             .then(response => {
                 const fetchedData = response.data;
@@ -68,21 +67,27 @@ const App = () => {
             .finally(() => setLoading(false));
     };
 
-    const StyledFooter = styled(Box)(({ theme }) => ({
+    const StyledFooter = styled(Box)(() => ({
         position: "fixed",
         bottom: 0,
         left: 0,
         width: "100%",
         padding: "1rem",
-        backgroundColor: "#1976d2",
+        backgroundColor: "rgba(64, 64, 64, 1)",
         color: "#fff",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        zIndex: 1000
+        zIndex: 1000,
     }));
 
-    const IconWrapper = styled(Box)(({ theme }) => ({
+    const CenteredTypography = styled(Typography)(() => ({
+        position: "absolute",
+        left: "50%",
+        transform: "translateX(-50%)",
+    }));
+
+    const IconWrapper = styled(Box)(() => ({
         cursor: "pointer",
         transition: "transform 0.2s ease-in-out",
         "&:hover": {
@@ -90,15 +95,16 @@ const App = () => {
         }
     }));
 
-    const StyledButton = styled(Button)(({ theme }) => ({
-        backgroundColor: "#fff",
-        color: "#1976d2",
+    const StyledButton = styled(Button)(() => ({
+        backgroundColor: "#000",
+        color: "#fff",
         "&:hover": {
-            backgroundColor: "#e3f2fd"
+            backgroundColor: "#f9f9f9",
+            color: "#000"
         }
     }));
 
-    const ChartContainer = styled(Box)(({ theme }) => ({
+    const ChartContainer = styled(Box)(() => ({
         width: "100%",
         height: "400px",
         padding: "20px",
@@ -107,8 +113,9 @@ const App = () => {
 
 
     return (
-        <>
-            <AppBar position="fixed">
+        <ThemeProvider theme={theme}>
+            <CssBaseline/>
+            <AppBar sx={{backgroundColor: 'rgba(64, 64, 64, 1)', boxShadow: 'none' , position: 'fixed'}}>
                 <Toolbar>
                     <Typography variant="h6" noWrap>
                         STKViewer
@@ -117,7 +124,7 @@ const App = () => {
             </AppBar>
 
             {/* Main Content */}
-            <Box sx={{ my: 4 }}>
+            <Box sx={{my: 4}}>
                 <FormControl fullWidth>
                     <InputLabel>Select Company</InputLabel>
                     <Select
@@ -132,16 +139,31 @@ const App = () => {
 
                 <Button
                     variant="contained"
-                    color="primary"
-                    sx={{ mt: 2 }}
+                    color="inherit"
+                    sx={{mt: 2}}
                     onClick={handleFetchData}
                     disabled={loading}
                 >
-                    {loading ? <CircularProgress size={24} /> : "Fetch Data"}
+                    {loading ? <CircularProgress size={24}/> : "Fetch Data"}
                 </Button>
             </Box>
 
-            <ChartContainer>
+            <Box sx={{my: 4}}>
+                <h2>Latest Information:</h2>
+                <p id="latest-symbol">Symbol: </p>
+                <p id="latest-date">Date: </p>
+                <p id="latest-price">Last Trade Price: </p>
+                <p id="latest-change">Change: </p>
+                <p id="latest-signal">Signal: </p>
+                <p id="latest-sentiment">Recommendation: </p>
+                <p id="latest-prediction">Prediction: </p>
+                <p></p>
+                <p></p>
+                <p></p>
+                <p></p>
+            </Box>
+
+            {/*<ChartContainer>
                 <Typography variant="h4" gutterBottom>
                     Stock Price Trend
                 </Typography>
@@ -171,43 +193,40 @@ const App = () => {
                         </LineChart>
                     </ResponsiveContainer>
                 )}
-            </ChartContainer>
+            </ChartContainer>*/}
 
             <StyledFooter>
                 <IconWrapper>
                     <a
-                        href="https://github.com"
+                        href="https://github.com/MichealSK/STKViewer"
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: "inherit" }}
-                        aria-label="Visit GitHub"
+                        style={{color: "inherit"}}
+                        aria-label="Visit our GitHub"
                     >
-                        <FaGithub size={24} />
+                        <FaGithub size={24}/>
                     </a>
                 </IconWrapper>
 
-                <Typography
+                <CenteredTypography
                     variant="h6"
                     component="div"
-                    sx={{
-                        fontWeight: "bold",
-                        letterSpacing: 1
-                    }}
+                    align="center"
                 >
                     STKViewer
-                </Typography>
+                </CenteredTypography>
 
                 <StyledButton
                     variant="contained"
-                    href="https://mui.com"
+                    href="https://github.com/MichealSK/STKViewer/issues"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Visit Material-UI website"
                 >
-                    Visit MUI
+                    Report an issue
                 </StyledButton>
             </StyledFooter>
-        </>
+        </ThemeProvider>
     );
 };
 

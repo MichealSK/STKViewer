@@ -3,17 +3,21 @@ import {
     AppBar, Toolbar, Typography, Box, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, CssBaseline,
 } from "@mui/material";
 import { styled } from "@mui/system";
-import { FaGithub } from "react-icons/fa";
+import { FaGithub, FaLinkedin } from "react-icons/fa";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 
+const apiBase = "http://127.0.0.1:5000";
 
 const App = () => {
     const [symbols, setSymbols] = useState([]);
     const [selectedSymbol, setSelectedSymbol] = useState("");
+    const [selectedSymbol1, setSelectedSymbol1] = useState("");
     const [companyData, setCompanyData] = useState(null);
+    const [companyData1, setCompanyData1] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [loading1, setLoading1] = useState(false);
     const theme = createTheme({
         palette: {
             mode: 'dark',
@@ -57,7 +61,30 @@ const App = () => {
             setLoading(false);
         }
     };
+    const fetchCompanyData1 = async () => {
+        if (!selectedSymbol1) {
+            alert("Please select a company.");
+            return;
+        }
+        setLoading1(true);
+        try {
+            const response = await fetch(`${apiBase}/stocks?symbol=${selectedSymbol1}`);
+            const data = await response.json();
 
+            if (response.ok) {
+                setCompanyData1(data);
+            } else {
+                alert(data.error || "No data available for the selected company.");
+            }
+        } catch (error) {
+            console.error("Error fetching company data:", error);
+            alert("An error occurred while fetching company data.");
+        } finally {
+            setLoading1(false);
+        }
+    };
+
+    // eslint-disable-next-line react/prop-types
     const LineChartComponent = ({ symbol }) => {
         const [timeInterval, setTimeInterval] = useState("7");
         const [chartData, setChartData] = useState([]);
@@ -92,6 +119,7 @@ const App = () => {
                 } else {
                     setError("Failed to fetch data for the selected interval.");
                 }
+                // eslint-disable-next-line no-unused-vars
             } catch (err) {
                 setError("An error occurred while fetching chart data.");
             } finally {
@@ -104,7 +132,6 @@ const App = () => {
                 fetchData();
             }
         }, [symbol, timeInterval]);
-        console.log(chartData)
         return (
             <Box sx={{
                 my: 4,
@@ -242,8 +269,52 @@ const App = () => {
 
            <LineChartComponent symbol={selectedSymbol} />
 
+            <hr />
+
+            <Box sx={{my: 4}}>
+                <FormControl fullWidth>
+                    <InputLabel>Select Company to Compare</InputLabel>
+                    <Select
+                        value={selectedSymbol1}
+                        onChange={(e) => setSelectedSymbol1(e.target.value)}
+                    >
+                        {symbols.map((symbol, index) => (
+                            <MenuItem key={index} value={symbol}>{symbol}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                <Button
+                    variant="contained"
+                    color="inherit"
+                    sx={{mt: 2}}
+                    onClick={fetchCompanyData1}
+                    disabled={loading1}
+                >
+                    {loading1 ? <CircularProgress size={24}/> : "Fetch Data"}
+                </Button>
+            </Box>
+            {companyData1 && (
+                <div>
+                    <h2>Latest information for: {selectedSymbol1}</h2>
+                    <p>
+                        <span className="data" id="latest-symbol">Symbol: {companyData1.dataframe[companyData1.dataframe.length - 1].Symbol}</span>
+                        <span className="data" id="latest-date">Date: {companyData1.dataframe[companyData1.dataframe.length - 1].Date}</span>
+                        <span className="data" id="latest-price">Last Trade Price: {companyData1.dataframe[companyData1.dataframe.length - 1].Last_Trade_Price}</span>
+                        <span className="data" id="latest-change">Change: {companyData1.dataframe[companyData1.dataframe.length - 1].Change}</span>
+                        <span className="data" id="latest-signal">Signal: {companyData1.dataframe[companyData1.dataframe.length - 1].Overall_signal}</span>
+                        <span className="data" id="latest-sentiment">Recommendation: {companyData1.sentiment}</span>
+                        <span className="data" id="latest-prediction">{companyData1.prediction}</span>
+                    </p>
+                    {error && <p style={{color: "red"}}>{error}</p>}
+                </div>
+            )}
+
+            <LineChartComponent symbol={selectedSymbol1} />
+
             <StyledFooter>
-                <IconWrapper>
+                <div className="icon-wrapper">
+                <IconWrapper className="icon">
                     <a
                         href="https://github.com/MichealSK/STKViewer"
                         target="_blank"
@@ -254,6 +325,40 @@ const App = () => {
                         <FaGithub size={24}/>
                     </a>
                 </IconWrapper>
+                <IconWrapper className="icon">
+                    <a
+                        href="https://github.com/MichealSK"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{color: "inherit"}}
+                        aria-label="Visit our LinkedIn"
+                    >
+                        <FaLinkedin size={24}/>
+                    </a>
+                </IconWrapper>
+                <IconWrapper className="icon">
+                    <a
+                        href="https://www.linkedin.com/in/stefan-misoski/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{color: "inherit"}}
+                        aria-label="Visit our GitHub"
+                    >
+                        <FaLinkedin size={24}/>
+                    </a>
+                </IconWrapper>
+                <IconWrapper className="icon">
+                    <a
+                        href="https://www.linkedin.com/in/krste-koloski-9a6992304/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{color: "inherit"}}
+                        aria-label="Visit our GitHub"
+                    >
+                        <FaLinkedin size={24}/>
+                    </a>
+                </IconWrapper>
+                </div>
 
                 <CenteredTypography
                     variant="h6"

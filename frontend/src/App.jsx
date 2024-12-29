@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     AppBar, Toolbar, Typography, Box, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, CssBaseline,
 } from "@mui/material";
 import { styled } from "@mui/system";
 import { FaGithub } from "react-icons/fa";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-//import {LinearScale, Title} from "@mui/icons-material";
-//import {LineElement} from "@mui/x-charts";
-//ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
+
 
 const App = () => {
     const [symbols, setSymbols] = useState([]);
@@ -59,6 +58,77 @@ const App = () => {
         }
     };
 
+    const LineChartComponent = ({ symbol }) => {
+        const [timeInterval, setTimeInterval] = useState("1d");
+        const [chartData, setChartData] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState(null);
+
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await fetch(
+                    `${apiBase}/chart?symbol=${symbol}&interval=${timeInterval}`
+                );
+                const data = await response.json();
+
+                if (response.ok) {
+                    const transformedData = data.dataframe.map((entry) => ({
+                        date: entry.Date,
+                        price: entry.Last_Trade_Price,
+                    }));
+                    setChartData(transformedData);
+                } else {
+                    setError("Failed to fetch data for the selected interval.");
+                }
+            } catch (err) {
+                setError("An error occurred while fetching chart data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        useEffect(() => {
+            if (symbol) {
+                fetchData();
+            }
+        }, [symbol, timeInterval]);
+
+        return (
+            <Box sx={{ my: 4 }}>
+                <Typography variant="h6" gutterBottom>
+                    Price Trend for {symbol}
+                </Typography>
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                    <Select
+                        value={timeInterval}
+                        onChange={(e) => setTimeInterval(e.target.value)}
+                    >
+                        <MenuItem value="1d">1 Day</MenuItem>
+                        <MenuItem value="1w">1 Week</MenuItem>
+                        <MenuItem value="1m">1 Month</MenuItem>
+                    </Select>
+                </FormControl>
+                {loading ? (
+                    <CircularProgress />
+                ) : error ? (
+                    <Typography color="error">{error}</Typography>
+                ) : (
+                    <ResponsiveContainer width="100%" height={400}>
+                        <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="price" stroke="#8884d8" dot={false} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                )}
+            </Box>
+        );
+    };
+
     const StyledFooter = styled(Box)(() => ({
         position: "fixed",
         bottom: 0,
@@ -95,8 +165,6 @@ const App = () => {
             color: "#000"
         }
     }));
-
-
 
     return (
         <ThemeProvider theme={theme}>
@@ -152,37 +220,7 @@ const App = () => {
                 </div>
             )}
 
-            {/*<ChartContainer>
-                <Typography variant="h4" gutterBottom>
-                    Stock Price Trend
-                </Typography>
-                {loading ? (
-                    <Typography>Loading...</Typography>
-                ) : error ? (
-                    <Typography color="error">{error}</Typography>
-                ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                            data={stockData.length ? stockData : dummyData}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="#1976d2"
-                                strokeWidth={2}
-                                dot={{ r: 4 }}
-                                activeDot={{ r: 8 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                )}
-            </ChartContainer>*/}
+           <LineChartComponent symbol={selectedSymbol} />
 
             <StyledFooter>
                 <IconWrapper>

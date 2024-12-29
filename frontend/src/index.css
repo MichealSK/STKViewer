@@ -42,6 +42,8 @@ p {
 
 .data {
   display: flex;
+  padding-bottom: 2px;
+  padding-right: 2px;
 }
 
 button {

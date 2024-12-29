@@ -382,5 +382,43 @@ def fetch_stock_data():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/chart', methods=['GET'])
+def fetch_chart_data():
+    symbol = request.args.get('symbol')
+    interval = request.args.get('interval', '1d')  # Default to 1 day if not provided
+
+    if not symbol:
+        return jsonify({"error": "Symbol parameter is required"}), 400
+
+    try:
+        conn = sqlite3.connect('stocks_history.db')
+        cursor = conn.cursor()
+        query = "SELECT * FROM stocks_history WHERE Symbol = ? ORDER BY Date DESC"
+        cursor.execute(query, (symbol,))
+        rows = cursor.fetchall()
+        conn.close()
+        columns = ["Symbol", "Date", "Last_Trade_Price", "Max", "Min", "Average_Price", "Change", "Volume", "Best_Turnover", "Total_Turnover"]
+        df = pd.DataFrame(rows, columns=columns)
+        df = df.fillna(0)
+        df = df.replace([np.inf, -np.inf], 0)
+        df['Date'] = pd.to_datetime(df['Date'])
+        df.sort_values(by='Date', ascending=False, inplace=True)
+        if interval == '1d':
+            filtered_df = df.head(1)
+        elif interval == '1w':
+            last_week = datetime.now() - timedelta(days=7)
+            filtered_df = df[df['Date'] >= last_week]
+        elif interval == '1m':
+            last_month = datetime.now() - timedelta(days=30)
+            filtered_df = df[df['Date'] >= last_month]
+        else:
+            return jsonify({"error": "Invalid interval parameter"}), 400
+        filtered_data = filtered_df.to_dict(orient='records')
+        return jsonify({"dataframe": filtered_data}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True)

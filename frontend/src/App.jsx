@@ -327,7 +327,7 @@ const App = () => {
                 </IconWrapper>
                 <IconWrapper className="icon">
                     <a
-                        href="https://github.com/MichealSK"
+                        href="https://www.linkedin.com/in/mihail-sekuloski-179149344/"
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{color: "inherit"}}

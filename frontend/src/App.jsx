@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     AppBar, Toolbar, Typography, Box, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, CssBaseline,
 } from "@mui/material";
@@ -59,7 +59,7 @@ const App = () => {
     };
 
     const LineChartComponent = ({ symbol }) => {
-        const [timeInterval, setTimeInterval] = useState("1d");
+        const [timeInterval, setTimeInterval] = useState("7");
         const [chartData, setChartData] = useState([]);
         const [loading, setLoading] = useState(false);
         const [error, setError] = useState(null);
@@ -74,11 +74,21 @@ const App = () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    const transformedData = data.dataframe.map((entry) => ({
-                        date: entry.Date,
-                        price: entry.Last_Trade_Price,
+                    const transformedData = data.dataframe.map((entry) => {
+                        const parsedPrice = parseFloat(entry.Last_Trade_Price.replace('.', '').replace(',', '.'));
+                        const truncatedPrice = isNaN(parsedPrice) ? null : Math.trunc(parsedPrice); // Truncate decimal values
+                        return {
+                            price: truncatedPrice,
+                        };
+                    });
+                    const limit = timeInterval === "7" ? 7 : timeInterval === "30" ? 30 : 60;
+                    const lastData = transformedData.slice(-limit);
+                    const dataWithIndex = lastData.map((entry, index) => ({
+                        ...entry,
+                        index: index + 1,
                     }));
-                    setChartData(transformedData);
+
+                    setChartData(dataWithIndex);
                 } else {
                     setError("Failed to fetch data for the selected interval.");
                 }
@@ -94,9 +104,16 @@ const App = () => {
                 fetchData();
             }
         }, [symbol, timeInterval]);
-
+        console.log(chartData)
         return (
-            <Box sx={{ my: 4 }}>
+            <Box sx={{
+                my: 4,
+                backgroundColor: '#444',
+                color: '#fff',
+                padding: 3,
+                borderRadius: 2,
+                height: '700px',
+            }}>
                 <Typography variant="h6" gutterBottom>
                     Price Trend for {symbol}
                 </Typography>
@@ -105,9 +122,9 @@ const App = () => {
                         value={timeInterval}
                         onChange={(e) => setTimeInterval(e.target.value)}
                     >
-                        <MenuItem value="1d">1 Day</MenuItem>
-                        <MenuItem value="1w">1 Week</MenuItem>
-                        <MenuItem value="1m">1 Month</MenuItem>
+                        <MenuItem value="7">Last 7 Values</MenuItem>
+                        <MenuItem value="30">Last 30 Values</MenuItem>
+                        <MenuItem value="60">Last 60 Values</MenuItem>
                     </Select>
                 </FormControl>
                 {loading ? (
@@ -115,13 +132,16 @@ const App = () => {
                 ) : error ? (
                     <Typography color="error">{error}</Typography>
                 ) : (
-                    <ResponsiveContainer width="100%" height={400}>
-                        <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <ResponsiveContainer width="100%" height={500}>
+                        <LineChart data={([...chartData]).reverse()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
+                            <XAxis dataKey="index"
+                                   tickCount={chartData.length}
+                                   tickFormatter={(value) => `${value + 1}`}  // Sequential index (1, 2, 3, ...)
+                            />
                             <YAxis />
                             <Tooltip />
-                            <Line type="monotone" dataKey="price" stroke="#8884d8" dot={false} />
+                            <Line type="monotone" dataKey="price" stroke="#000000" dot={true} fill="#000000" fillOpacity={1}  />
                         </LineChart>
                     </ResponsiveContainer>
                 )}
@@ -208,11 +228,11 @@ const App = () => {
                 <div>
                     <h2>Latest information for: {selectedSymbol}</h2>
                     <p>
-                    <span className="data" id="latest-symbol">Symbol: {companyData.dataframe[0].Symbol}</span>
-                    <span className="data" id="latest-date">Date: {companyData.dataframe[0].Date}</span>
-                    <span className="data" id="latest-price">Last Trade Price: {companyData.dataframe[0].Last_Trade_Price}</span>
-                    <span className="data" id="latest-change">Change: {companyData.dataframe[0].Change}</span>
-                    <span className="data" id="latest-signal">Signal: {companyData.dataframe[0].Overall_signal}</span>
+                    <span className="data" id="latest-symbol">Symbol: {companyData.dataframe[companyData.dataframe.length - 1].Symbol}</span>
+                    <span className="data" id="latest-date">Date: {companyData.dataframe[companyData.dataframe.length - 1].Date}</span>
+                    <span className="data" id="latest-price">Last Trade Price: {companyData.dataframe[companyData.dataframe.length - 1].Last_Trade_Price}</span>
+                    <span className="data" id="latest-change">Change: {companyData.dataframe[companyData.dataframe.length - 1].Change}</span>
+                    <span className="data" id="latest-signal">Signal: {companyData.dataframe[companyData.dataframe.length - 1].Overall_signal}</span>
                     <span className="data" id="latest-sentiment">Recommendation: {companyData.sentiment}</span>
                     <span className="data" id="latest-prediction">{companyData.prediction}</span>
                     </p>

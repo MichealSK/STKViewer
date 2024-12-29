@@ -385,7 +385,7 @@ def fetch_stock_data():
 @app.route('/chart', methods=['GET'])
 def fetch_chart_data():
     symbol = request.args.get('symbol')
-    interval = request.args.get('interval', '1d')  # Default to 1 day if not provided
+    interval = request.args.get('interval', '7')
 
     if not symbol:
         return jsonify({"error": "Symbol parameter is required"}), 400
@@ -403,14 +403,12 @@ def fetch_chart_data():
         df = df.replace([np.inf, -np.inf], 0)
         df['Date'] = pd.to_datetime(df['Date'])
         df.sort_values(by='Date', ascending=False, inplace=True)
-        if interval == '1d':
-            filtered_df = df.head(1)
-        elif interval == '1w':
-            last_week = datetime.now() - timedelta(days=7)
-            filtered_df = df[df['Date'] >= last_week]
-        elif interval == '1m':
-            last_month = datetime.now() - timedelta(days=30)
-            filtered_df = df[df['Date'] >= last_month]
+        if interval == '7':
+            filtered_df = df.head(7)
+        elif interval == '30':
+            filtered_df = df.head(30)
+        elif interval == '60':
+            filtered_df = df.head(60)
         else:
             return jsonify({"error": "Invalid interval parameter"}), 400
         filtered_data = filtered_df.to_dict(orient='records')

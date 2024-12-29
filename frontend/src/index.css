@@ -26,6 +26,7 @@ body {
   margin: 64px 0 64px 0 !important;
   padding-left: 2rem;
   display: flex;
+  justify-content: center;
   /*place-items: center;*/
   min-width: 320px;
   min-height: 100vh;

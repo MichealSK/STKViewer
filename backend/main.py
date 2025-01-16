@@ -32,12 +32,19 @@ def fetch_stock_data():
 
     try:
         rows, columns = get_rows_columns()
+        print("Rows and Columns received successfully.")
         data = [dict(zip(columns, row)) for row in rows]
+        print("Created Dataframa.")
         df = get_signal_dataframe(data)
+        print("Created signal dataframe.")
         sentiment = get_news_sentiment(symbol)
+        print("Recieved Sentiment.")
         prediction = predict_prices(df)
+        print("Predicted Prices.")
         df = df.fillna(0)
+        print("Replaced Nulls.")
         df = df.replace([np.inf, -np.inf], 0)
+        print("Replaced Nulls.")
         return jsonify({"dataframe": df.to_dict(orient='records'), "sentiment": sentiment, "prediction": prediction}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

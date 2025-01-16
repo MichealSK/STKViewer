@@ -6,11 +6,15 @@ import pandas as pd
 def preprocess_data(data):
     df = pd.DataFrame(data)
     df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
-    for col in ['Last_Trade_Price', 'Max', 'Min', 'Average_Price', 'Change', 'Best_Turnover', 'Total_Turnover']:
+    for col in ['Last_Trade_Price', 'Max', 'Min', 'Average_Price', 'Change']:
         df[col] = df[col].str.replace('.', '', regex=False).str.replace(',', '.', regex=False).astype(float)
     df['Volume'] = pd.to_numeric(df['Volume'], errors='coerce')
+    df['Best_Turnover'] = pd.to_numeric(df['Best_Turnover'], errors='coerce')
+    df['Total_Turnover'] = pd.to_numeric(df['Total_Turnover'], errors='coerce')
     df.sort_values(by='Date', inplace=True)
     df.reset_index(drop=True, inplace=True)
+
+    print("Data Preprocessed.")
     return df
 
 
@@ -27,19 +31,23 @@ def calculate_indicators(df):
     df['MAE_upper'], df['MAE_lower'] = df['SMA'] * 1.02, df['SMA'] * 0.98
     df['HMA'] = ta.trend.WMAIndicator(close=df['Last_Trade_Price'], window=14).wma()
 
+    print("Indicators Calculated.")
     return df
 
 
 def generate_signals(df):
     df['RSI_signal'] = df['RSI'].apply(lambda x: 'Buy' if x < 30 else 'Sell' if x > 70 else 'Hold')
     df['MA_signal'] = df.apply(lambda row: 'Buy' if row['SMA'] < row['EMA'] else 'Sell' if row['SMA'] > row['EMA'] else 'Hold', axis=1)
-    # Dovrshi
+
+    print("Signals Generated.")
     return df
 
 
 def aggregate_signals(df):
     signals = ['RSI_signal', 'MA_signal']
     df['Overall_signal'] = df[signals].mode(axis=1)[0]
+
+    print("Signals Aggregated.")
     return df
 
 

@@ -44,4 +44,4 @@ def aggregate_signals(df):
 
 
 def get_signal_dataframe(data):
-    return generate_signals(calculate_indicators(preprocess_data(data)))
+    return aggregate_signals(generate_signals(calculate_indicators(preprocess_data(data))))

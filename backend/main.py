@@ -10,10 +10,8 @@ from natural_language_analysis import get_news_sentiment
 from stock_price_predictor import predict_prices
 from technical_analysis import get_signal_dataframe
 
-
 # RETRIEVE DATA
 main_pipeline()
-
 
 # FRONTEND
 app = Flask(__name__)
@@ -45,7 +43,8 @@ def fetch_stock_data():
         print("Replaced Nulls.")
         df = df.replace([np.inf, -np.inf], 0)
         print("Replaced Nulls.")
-        return jsonify({"dataframe": df.to_dict(orient='records'), "sentiment": sentiment, "prediction": prediction}), 200
+        return jsonify(
+            {"dataframe": df.to_dict(orient='records'), "sentiment": sentiment, "prediction": prediction}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

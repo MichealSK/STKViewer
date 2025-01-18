@@ -1,0 +1,10 @@
+Flask
+Flask-CORS
+pandas
+numpy
+ta
+requests
+beautifulsoup4
+nltk
+scikit-learn
+tensorflow

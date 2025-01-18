@@ -15,7 +15,7 @@ main_pipeline()
 
 # FRONTEND
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 @app.route('/symbols', methods=['GET'])
 def fetch_symbols():
@@ -32,11 +32,11 @@ def fetch_stock_data():
         rows, columns = get_rows_columns()
         print("Rows and Columns received successfully.")
         data = [dict(zip(columns, row)) for row in rows]
-        print("Created Dataframa.")
+        print("Created Dataframe.")
         df = get_signal_dataframe(data)
         print("Created signal dataframe.")
         sentiment = get_news_sentiment(symbol)
-        print("Recieved Sentiment.")
+        print("Received Sentiment.")
         prediction = predict_prices(df)
         print("Predicted Prices.")
         df = df.fillna(0)
@@ -80,4 +80,4 @@ def fetch_chart_data():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

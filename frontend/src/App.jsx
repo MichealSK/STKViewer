@@ -7,7 +7,7 @@ import {FaGithub, FaLinkedin} from "react-icons/fa";
 import {ThemeProvider, createTheme} from '@mui/material/styles';
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 
-const apiBase = 'http://localhost:5000' || import.meta.env.VITE_API_URL;
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const App = () => {
     const [symbols, setSymbols] = useState([]);

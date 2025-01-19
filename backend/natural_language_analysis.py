@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
-# nltk.download("vader_lexicon")
+nltk.download("vader_lexicon")
 
 
 def get_news_sentiment(company_name):

@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import {useState, useEffect} from "react";
 import {
     AppBar, Toolbar, Typography, Box, Button, Select, MenuItem, FormControl, InputLabel, CircularProgress, CssBaseline,
 } from "@mui/material";
-import { styled } from "@mui/system";
-import { FaGithub, FaLinkedin } from "react-icons/fa";
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import {styled} from "@mui/system";
+import {FaGithub, FaLinkedin} from "react-icons/fa";
+import {ThemeProvider, createTheme} from '@mui/material/styles';
 import {CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from "recharts";
 
-const apiBase = "http://127.0.0.1:5000";
+const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const App = () => {
     const [symbols, setSymbols] = useState([]);
@@ -85,7 +85,7 @@ const App = () => {
     };
 
     // eslint-disable-next-line react/prop-types
-    const LineChartComponent = ({ symbol }) => {
+    const LineChartComponent = ({symbol}) => {
         const [timeInterval, setTimeInterval] = useState("7");
         const [chartData, setChartData] = useState([]);
         const [loading, setLoading] = useState(false);
@@ -144,7 +144,7 @@ const App = () => {
                 <Typography variant="h6" gutterBottom>
                     Price Trend for {symbol}
                 </Typography>
-                <FormControl fullWidth sx={{ mb: 2 }}>
+                <FormControl fullWidth sx={{mb: 2}}>
                     <Select
                         value={timeInterval}
                         onChange={(e) => setTimeInterval(e.target.value)}
@@ -155,20 +155,21 @@ const App = () => {
                     </Select>
                 </FormControl>
                 {loading ? (
-                    <CircularProgress />
+                    <CircularProgress/>
                 ) : error ? (
                     <Typography color="error">{error}</Typography>
                 ) : (
                     <ResponsiveContainer width="100%" height={500}>
-                        <LineChart data={([...chartData]).reverse()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                            <CartesianGrid stroke="#ccc" strokeDasharray="3 3" />
+                        <LineChart data={([...chartData]).reverse()} margin={{top: 20, right: 30, left: 20, bottom: 5}}>
+                            <CartesianGrid stroke="#ccc" strokeDasharray="3 3"/>
                             <XAxis dataKey="index"
                                    tickCount={chartData.length}
                                    tickFormatter={(value) => `${value + 1}`}  // Sequential index (1, 2, 3, ...)
                             />
-                            <YAxis />
-                            <Tooltip />
-                            <Line type="monotone" dataKey="price" stroke="#000000" dot={true} fill="#000000" fillOpacity={1}  />
+                            <YAxis/>
+                            <Tooltip/>
+                            <Line type="monotone" dataKey="price" stroke="#000000" dot={true} fill="#000000"
+                                  fillOpacity={1}/>
                         </LineChart>
                     </ResponsiveContainer>
                 )}
@@ -216,7 +217,8 @@ const App = () => {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline/>
-            <AppBar sx={{backgroundColor: 'rgba(40, 40, 40, 1)', color:'inherit', boxShadow: 'none', position: 'fixed'}}>
+            <AppBar
+                sx={{backgroundColor: 'rgba(40, 40, 40, 1)', color: 'inherit', boxShadow: 'none', position: 'fixed'}}>
                 <Toolbar>
                     <Typography variant="h6" noWrap>
                         STKViewer
@@ -255,21 +257,26 @@ const App = () => {
                 <div>
                     <h2>Latest information for: {selectedSymbol}</h2>
                     <p>
-                    <span className="data" id="latest-symbol">Symbol: {companyData.dataframe[companyData.dataframe.length - 1].Symbol}</span>
-                    <span className="data" id="latest-date">Date: {companyData.dataframe[companyData.dataframe.length - 1].Date}</span>
-                    <span className="data" id="latest-price">Last Trade Price: {companyData.dataframe[companyData.dataframe.length - 1].Last_Trade_Price}</span>
-                    <span className="data" id="latest-change">Change: {companyData.dataframe[companyData.dataframe.length - 1].Change}</span>
-                    <span className="data" id="latest-signal">Signal: {companyData.dataframe[companyData.dataframe.length - 1].Overall_signal}</span>
-                    <span className="data" id="latest-sentiment">Recommendation: {companyData.sentiment}</span>
-                    <span className="data" id="latest-prediction">{companyData.prediction}</span>
+                        <span className="data"
+                              id="latest-symbol">Symbol: {companyData.dataframe[companyData.dataframe.length - 1].Symbol}</span>
+                        <span className="data"
+                              id="latest-date">Date: {companyData.dataframe[companyData.dataframe.length - 1].Date}</span>
+                        <span className="data"
+                              id="latest-price">Last Trade Price: {companyData.dataframe[companyData.dataframe.length - 1].Last_Trade_Price}</span>
+                        <span className="data"
+                              id="latest-change">Change: {companyData.dataframe[companyData.dataframe.length - 1].Change}</span>
+                        <span className="data"
+                              id="latest-signal">Signal: {companyData.dataframe[companyData.dataframe.length - 1].Overall_signal}</span>
+                        <span className="data" id="latest-sentiment">Recommendation: {companyData.sentiment}</span>
+                        <span className="data" id="latest-prediction">{companyData.prediction}</span>
                     </p>
                     {error && <p style={{color: "red"}}>{error}</p>}
                 </div>
             )}
 
-           <LineChartComponent symbol={selectedSymbol} />
+            <LineChartComponent symbol={selectedSymbol}/>
 
-            <hr />
+            <hr/>
 
             <Box sx={{my: 4}}>
                 <FormControl fullWidth>
@@ -298,66 +305,70 @@ const App = () => {
                 <div>
                     <h2>Latest information for: {selectedSymbol1}</h2>
                     <p>
-                        <span className="data" id="latest-symbol">Symbol: {companyData1.dataframe[companyData1.dataframe.length - 1].Symbol}</span>
-                        <span className="data" id="latest-date">Date: {companyData1.dataframe[companyData1.dataframe.length - 1].Date}</span>
-                        <span className="data" id="latest-price">Last Trade Price: {companyData1.dataframe[companyData1.dataframe.length - 1].Last_Trade_Price}</span>
-                        <span className="data" id="latest-change">Change: {companyData1.dataframe[companyData1.dataframe.length - 1].Change}</span>
-                        <span className="data" id="latest-signal">Signal: {companyData1.dataframe[companyData1.dataframe.length - 1].Overall_signal}</span>
+                        <span className="data"
+                              id="latest-symbol">Symbol: {companyData1.dataframe[companyData1.dataframe.length - 1].Symbol}</span>
+                        <span className="data"
+                              id="latest-date">Date: {companyData1.dataframe[companyData1.dataframe.length - 1].Date}</span>
+                        <span className="data"
+                              id="latest-price">Last Trade Price: {companyData1.dataframe[companyData1.dataframe.length - 1].Last_Trade_Price}</span>
+                        <span className="data"
+                              id="latest-change">Change: {companyData1.dataframe[companyData1.dataframe.length - 1].Change}</span>
+                        <span className="data"
+                              id="latest-signal">Signal: {companyData1.dataframe[companyData1.dataframe.length - 1].Overall_signal}</span>
                         <span className="data" id="latest-sentiment">Recommendation: {companyData1.sentiment}</span>
                         <span className="data" id="latest-prediction">{companyData1.prediction}</span>
                     </p>
                     {error && <p style={{color: "red"}}>{error}</p>}
                 </div>
             )}
-
-            <LineChartComponent symbol={selectedSymbol1} />
+            <LineChartComponent symbol={selectedSymbol1}/>
 
             <StyledFooter>
                 <div className="icon-wrapper">
-                <IconWrapper className="icon">
-                    <a
-                        href="https://github.com/MichealSK/STKViewer"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{color: "inherit"}}
-                        aria-label="Visit our GitHub"
-                    >
-                        <FaGithub size={24}/>
-                    </a>
-                </IconWrapper>
-                <IconWrapper className="icon">
-                    <a
-                        href="https://www.linkedin.com/in/mihail-sekuloski-179149344/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{color: "inherit"}}
-                        aria-label="Visit our LinkedIn"
-                    >
-                        <FaLinkedin size={24}/>
-                    </a>
-                </IconWrapper>
-                <IconWrapper className="icon">
-                    <a
-                        href="https://www.linkedin.com/in/stefan-misoski/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{color: "inherit"}}
-                        aria-label="Visit our GitHub"
-                    >
-                        <FaLinkedin size={24}/>
-                    </a>
-                </IconWrapper>
-                <IconWrapper className="icon">
-                    <a
-                        href="https://www.linkedin.com/in/krste-koloski-9a6992304/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{color: "inherit"}}
-                        aria-label="Visit our GitHub"
-                    >
-                        <FaLinkedin size={24}/>
-                    </a>
-                </IconWrapper>
+                    <IconWrapper className="icon">
+                        <a
+                            href="https://github.com/MichealSK/STKViewer"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{color: "inherit"}}
+                            aria-label="Visit our GitHub"
+                        >
+                            <FaGithub size={24}/>
+                        </a>
+                    </IconWrapper>
+                    <IconWrapper className="icon">
+                        <a
+                            href="https://www.linkedin.com/in/mihail-sekuloski-179149344/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{color: "inherit"}}
+                            aria-label="Visit our LinkedIn"
+                        >
+                            <FaLinkedin size={24}/>
+                        </a>
+                    </IconWrapper>
+                    <IconWrapper className="icon">
+                        <a
+                            href="https://www.linkedin.com/in/stefan-misoski/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{color: "inherit"}}
+                            aria-label="Visit our GitHub"
+                        >
+                            <FaLinkedin size={24}/>
+                        </a>
+                    </IconWrapper>
+                    <IconWrapper className="icon">
+                        <a
+                            href="https://www.linkedin.com/in/krste-koloski-9a6992304/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{color: "inherit"}}
+                            aria-label="Visit our GitHub"
+                        >
+                            <FaLinkedin size={24}/>
+                        </a>
+                    </IconWrapper>
                 </div>
 
                 <CenteredTypography
